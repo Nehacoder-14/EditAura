@@ -1,0 +1,10 @@
+node_modules/
+.env
+*.log
+.DS_Store
+data/yjs-docs/
+data/editaura.db
+data/editaura.db-wal
+data/editaura.db-shm
+public/js/editor.bundle.js
+public/js/editor.bundle.js.map

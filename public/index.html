@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EditAura — Real-time Code Collaboration</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .signup-page { position: relative; }
+    /* Extra highlight ring behind card */
+    .card-glow-ring {
+      position: absolute;
+      width: 520px; height: 520px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,255,136,0.07) 0%, transparent 65%);
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      pointer-events: none;
+      animation: ringPulse 4s ease-in-out infinite;
+    }
+    @keyframes ringPulse {
+      0%,100% { opacity:0.6; transform:translate(-50%,-50%) scale(1); }
+      50%      { opacity:1;   transform:translate(-50%,-50%) scale(1.08); }
+    }
+    .feature-pills {
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+      margin-top: 20px;
+    }
+    .feature-pill {
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 0.72rem; font-weight: 600; color: var(--text-3);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .or-divider { display: flex; align-items: center; gap: 12px; color: var(--text-3); font-size: 0.8rem; margin: 6px 0; }
+    .or-divider::before, .or-divider::after { content:''; flex:1; height:1px; background: var(--border); }
+  </style>
+</head>
+<body>
+  <!-- Background -->
+  <div class="bg-scene">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="bg-noise"></div>
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Page -->
+  <div class="page-content signup-page">
+    <div class="card-glow-ring"></div>
+
+    <div class="signup-card">
+      <div class="signup-logo">
+        <div class="logo-mark">EA</div>
+        <h1 style="font-size:1.6rem;" class="gradient-text glow-text">EditAura</h1>
+        <p class="signup-tagline mt-1">
+          <span class="typewriter" id="tagline"></span>
+        </p>
+      </div>
+
+      <form class="signup-form" id="signup-form">
+        <div class="input-group">
+          <label>Your name</label>
+          <input type="text" id="input-name" placeholder="Ada Lovelace" autocomplete="off" required />
+        </div>
+
+        <div class="or-divider">or join an existing workspace</div>
+
+        <div class="input-group">
+          <label>Workspace ID <span style="color:var(--text-3);font-weight:400">(optional)</span></label>
+          <input type="text" id="input-workspace" placeholder="abc123" autocomplete="off" />
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" style="margin-top:4px;padding:14px;">
+          <span id="btn-text">Launch into the Aura</span>
+          <span id="btn-spinner" style="display:none">⟳</span>
+        </button>
+      </form>
+
+      <div class="feature-pills">
+        <span class="feature-pill">⚡ Real-time sync</span>
+        <span class="feature-pill">👥 Multiplayer cursors</span>
+        <span class="feature-pill">💬 Built-in chat</span>
+        <span class="feature-pill">🔒 Private workspaces</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/particles.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    // Typewriter tagline
+    document.addEventListener('DOMContentLoaded', () => {
+      typewriter(document.getElementById('tagline'), [
+        'Code together, ship faster.',
+        'Real-time collaboration.',
+        'Your team, one editor.',
+        'No setup. Just code.',
+      ], 55, 2000);
+    });
+
+    // Handle form
+    const form = document.getElementById('signup-form');
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const name = document.getElementById('input-name').value.trim();
+      const wsId  = document.getElementById('input-workspace').value.trim();
+
+      if(!name){ showToast('Please enter your name.', 'error'); return; }
+
+      const btn  = form.querySelector('.btn');
+      const bTxt = document.getElementById('btn-text');
+      const bSpin= document.getElementById('btn-spinner');
+      btn.disabled = true;
+      bTxt.textContent = 'Connecting…';
+      bSpin.style.display = 'inline-block';
+
+      // Persist user
+      const userId = 'u_' + Math.random().toString(36).slice(2,9);
+      localStorage.setItem('ea_user', JSON.stringify({ id: userId, name }));
+
+      if(wsId){
+        // Joining an existing workspace
+        setTimeout(() => {
+          window.location.href = `room.html?workspace=${encodeURIComponent(wsId)}`;
+        }, 600);
+      } else {
+        // Go to dashboard to pick/create workspace
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 600);
+      }
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,186 @@
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const Database = require("better-sqlite3");
+
+const DATA_DIR = path.join(__dirname);
+const DB_PATH = path.join(DATA_DIR, "editaura.db");
+const LEGACY_JSON = path.join(DATA_DIR, "rooms.json");
+const YJS_DIR = path.join(DATA_DIR, "yjs-docs");
+
+let db;
+
+function mapRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    language: row.language,
+    description: row.description || "",
+    createdAt: row.created_at,
+    createdBy: row.created_by || "unknown",
+    creatorId: row.creator_id || null,
+    activeUsers: 0,
+  };
+}
+
+function initYjsDocument(roomId, seedText) {
+  const Y = require("yjs");
+  const ydoc = new Y.Doc();
+  const ytext = ydoc.getText("source");
+  const content = seedText || "// New workspace — start coding together\n";
+  ytext.insert(0, content);
+  fs.mkdirSync(YJS_DIR, { recursive: true });
+  fs.writeFileSync(
+    path.join(YJS_DIR, `${roomId}.bin`),
+    Buffer.from(Y.encodeStateAsUpdate(ydoc))
+  );
+}
+
+function migrateFromJsonIfEmpty() {
+  const count = db.prepare("SELECT COUNT(*) AS c FROM workspaces").get().c;
+  if (count > 0 || !fs.existsSync(LEGACY_JSON)) return;
+
+  const rooms = JSON.parse(fs.readFileSync(LEGACY_JSON, "utf8"));
+  const insert = db.prepare(`
+    INSERT INTO workspaces (id, name, language, description, created_at, created_by, creator_id)
+    VALUES (@id, @name, @language, @description, @created_at, @created_by, @creator_id)
+  `);
+
+  const tx = db.transaction((items) => {
+    for (const room of items) {
+      insert.run({
+        id: room.id,
+        name: room.name,
+        language: room.language || "javascript",
+        description: room.description || "",
+        created_at: room.createdAt || new Date().toISOString(),
+        created_by: "system",
+        creator_id: null,
+      });
+      if (!fs.existsSync(path.join(YJS_DIR, `${room.id}.bin`))) {
+        const seeds = require("./room-seeds.js");
+        initYjsDocument(room.id, seeds[room.id]);
+      }
+    }
+  });
+  tx(rooms);
+  console.log(`[DB] Migrated ${rooms.length} workspaces from rooms.json`);
+}
+
+function initDb() {
+  if (db) return db;
+
+  db = new Database(DB_PATH);
+  db.pragma("journal_mode = WAL");
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS workspaces (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      language TEXT NOT NULL DEFAULT 'javascript',
+      description TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL,
+      created_by TEXT NOT NULL,
+      creator_id TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_workspaces_created_at ON workspaces(created_at DESC);
+  `);
+
+  migrateFromJsonIfEmpty();
+  return db;
+}
+
+function getDb() {
+  return initDb();
+}
+
+function listWorkspaces() {
+  const rows = getDb()
+    .prepare("SELECT * FROM workspaces ORDER BY datetime(created_at) DESC")
+    .all();
+  return rows.map(mapRow);
+}
+
+function getWorkspaceById(id) {
+  const row = getDb().prepare("SELECT * FROM workspaces WHERE id = ?").get(id);
+  return mapRow(row);
+}
+
+function createWorkspace({ name, language, description, createdBy, creatorId }) {
+  const trimmed = String(name || "").trim();
+  if (trimmed.length < 2) {
+    throw new Error("Workspace name must be at least 2 characters");
+  }
+
+  const existing = getDb()
+    .prepare("SELECT id FROM workspaces WHERE LOWER(name) = LOWER(?)")
+    .get(trimmed);
+  if (existing) {
+    throw new Error("A workspace with this name already exists");
+  }
+
+  const id = `ws_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
+  const now = new Date().toISOString();
+  const lang = language || "javascript";
+  const desc = description || `Collaborative ${lang} workspace`;
+
+  getDb()
+    .prepare(
+      `INSERT INTO workspaces (id, name, language, description, created_at, created_by, creator_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(id, trimmed, lang, desc, now, createdBy || "anonymous", creatorId || null);
+
+  initYjsDocument(id);
+  return getWorkspaceById(id);
+}
+
+function updateWorkspace(id, updates) {
+  const current = getWorkspaceById(id);
+  if (!current) return null;
+
+  if (updates.name !== undefined) {
+    const trimmed = String(updates.name).trim();
+    if (trimmed.length < 2) throw new Error("Name must be at least 2 characters");
+    const clash = getDb()
+      .prepare("SELECT id FROM workspaces WHERE LOWER(name) = LOWER(?) AND id != ?")
+      .get(trimmed, id);
+    if (clash) throw new Error("A workspace with this name already exists");
+    current.name = trimmed;
+  }
+  if (updates.language !== undefined) current.language = updates.language;
+  if (updates.description !== undefined) current.description = updates.description;
+
+  getDb()
+    .prepare(
+      `UPDATE workspaces SET name = ?, language = ?, description = ? WHERE id = ?`
+    )
+    .run(current.name, current.language, current.description, id);
+
+  return getWorkspaceById(id);
+}
+
+function deleteWorkspace(id) {
+  const result = getDb().prepare("DELETE FROM workspaces WHERE id = ?").run(id);
+  const yjsFile = path.join(YJS_DIR, `${id}.bin`);
+  if (fs.existsSync(yjsFile)) fs.unlinkSync(yjsFile);
+  return result.changes > 0;
+}
+
+// Legacy aliases
+const loadRooms = listWorkspaces;
+const getRoomById = getWorkspaceById;
+
+module.exports = {
+  initDb,
+  getDb,
+  listWorkspaces,
+  getWorkspaceById,
+  createWorkspace,
+  updateWorkspace,
+  deleteWorkspace,
+  initYjsDocument,
+  loadRooms,
+  getRoomById,
+};

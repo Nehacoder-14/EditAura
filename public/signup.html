@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EditAura - Signup</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .signup-container {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        h1 {
+            color: #3dff8a;
+            margin-bottom: 0.5rem;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #3dff8a;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #2ecc71;
+        }
+        .error {
+            color: #ff6b6b;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <h1>EditAura</h1>
+        <p style="color: #888;">Enter your name to collaborate</p>
+        
+        <input type="text" id="username" placeholder="Your name" autocomplete="off">
+        <input type="text" id="avatar" placeholder="Avatar emoji (optional)" value="🧑‍💻">
+        <button onclick="signup()">Join Dashboard →</button>
+        <div id="error" class="error"></div>
+    </div>
+
+    <script>
+        function signup() {
+            const username = document.getElementById('username').value.trim();
+            const avatar = document.getElementById('avatar').value.trim() || '🧑‍💻';
+            
+            if (!username || username.length < 2) {
+                document.getElementById('error').textContent = 'Username must be at least 2 characters';
+                return;
+            }
+            
+            const user = {
+                id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                username: username,
+                avatar: avatar,
+                color: '#3dff8a',
+                joinedAt: new Date().toISOString()
+            };
+            
+            localStorage.setItem('editaura_user', JSON.stringify(user));
+            console.log('User saved:', user);
+            window.location.href = '/dashboard';
+        }
+        
+        document.getElementById('username').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') signup();
+        });
+    </script>
+</body>
+</html>

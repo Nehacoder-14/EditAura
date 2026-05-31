@@ -1,0 +1,42 @@
+[
+  {
+    "id": "room_alpha01",
+    "name": "Algorithm Lab",
+    "language": "python",
+    "description": "Competitive programming and algorithm challenges",
+    "createdAt": "2026-05-31T10:30:00.000Z",
+    "activeUsers": 0
+  },
+  {
+    "id": "room_beta02",
+    "name": "React Sandbox",
+    "language": "javascript",
+    "description": "Experimenting with React patterns and hooks",
+    "createdAt": "2026-05-31T11:45:00.000Z",
+    "activeUsers": 0
+  },
+  {
+    "id": "room_gamma03",
+    "name": "Systems Design",
+    "language": "typescript",
+    "description": "Distributed systems, APIs, and architecture sketches",
+    "createdAt": "2026-05-31T12:15:00.000Z",
+    "activeUsers": 0
+  },
+  {
+    "id": "room_delta04",
+    "name": "Rust Workshop",
+    "language": "rust",
+    "description": "Memory-safe systems programming exercises",
+    "createdAt": "2026-05-31T12:50:00.000Z",
+    "activeUsers": 0
+  },
+  {
+    "id": "room_epsilon05",
+    "name": "Data Pipelines",
+    "language": "go",
+    "description": "Streaming ETL jobs and concurrent worker patterns",
+    "createdAt": "2026-05-31T13:10:00.000Z",
+    "activeUsers": 0
+  }
+]

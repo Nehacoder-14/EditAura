@@ -1,0 +1,64 @@
+{
+  "workspaces": [
+    {
+      "id": "1",
+      "name": "Project Alpha",
+      "language": "JavaScript",
+      "description": "Main project",
+      "createdBy": "System",
+      "creatorId": "system",
+      "createdAt": "2026-05-31T14:42:02.048Z",
+      "updatedAt": "2026-05-31T14:42:02.049Z"
+    },
+    {
+      "id": "2",
+      "name": "Project Beta",
+      "language": "Python",
+      "description": "Backend API",
+      "createdBy": "System",
+      "creatorId": "system",
+      "createdAt": "2026-05-31T14:42:02.049Z",
+      "updatedAt": "2026-05-31T14:42:02.049Z"
+    },
+    {
+      "id": "3",
+      "name": "Design System",
+      "language": "CSS",
+      "description": "UI components",
+      "createdBy": "System",
+      "creatorId": "system",
+      "createdAt": "2026-05-31T14:42:02.049Z",
+      "updatedAt": "2026-05-31T14:42:02.049Z"
+    },
+    {
+      "id": "4",
+      "name": "Backend API",
+      "language": "Node.js",
+      "description": "REST API",
+      "createdBy": "System",
+      "creatorId": "system",
+      "createdAt": "2026-05-31T14:42:02.049Z",
+      "updatedAt": "2026-05-31T14:42:02.049Z"
+    },
+    {
+      "id": "5",
+      "name": "Mobile App",
+      "language": "React Native",
+      "description": "iOS/Android",
+      "createdBy": "System",
+      "creatorId": "system",
+      "createdAt": "2026-05-31T14:42:02.049Z",
+      "updatedAt": "2026-05-31T14:42:02.049Z"
+    },
+    {
+      "id": "1780243358856",
+      "name": "arena",
+      "language": "JavaScript",
+      "description": "",
+      "createdBy": "neha",
+      "creatorId": "u_cfth2xg",
+      "createdAt": "2026-05-31T16:02:38.856Z",
+      "updatedAt": "2026-05-31T16:02:38.856Z"
+    }
+  ]
+}

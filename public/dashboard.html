@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — EditAura</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    /* Dashboard-specific extras */
+    .hero-greeting {
+      margin-bottom: 32px;
+      animation: pageIn 0.6s ease forwards;
+    }
+    .hero-greeting p { color: #aaa; font-size: 1.0rem; margin-top: 6px; }
+
+    .search-bar {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 0 16px;
+      width: 260px;
+    }
+    .search-bar input {
+      background: none; border: none; padding: 11px 0;
+      font-size: 0.88rem; color: white;
+      outline: none; width: 100%;
+    }
+    .search-icon { color: #666; font-size: 0.9rem; }
+
+    .btn-new {
+      background: linear-gradient(135deg, #00ff88, #00d4ff);
+      border: none;
+      color: #0a0a0a;
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .btn-new:hover { transform: scale(1.04); box-shadow: 0 0 20px rgba(0,255,136,0.25); }
+
+    .workspace-card {
+      background: rgba(20, 20, 40, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .workspace-card:hover {
+      transform: translateY(-5px);
+      border-color: #00ff88;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .user-menu {
+      position: relative;
+    }
+    .user-dropdown {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      background: rgba(12,12,28,0.97);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 10px;
+      min-width: 180px;
+      display: none;
+      z-index: 200;
+    }
+    .user-dropdown.open { display: block; }
+    .dropdown-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .dropdown-item:hover { background: rgba(255,255,255,0.06); }
+    .dropdown-item.danger:hover { color: #ff4444; }
+
+    .live-count-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px;
+      background: rgba(0,255,136,0.06);
+      border: 1px solid rgba(0,255,136,0.18);
+      border-radius: 99px;
+      font-size: 0.72rem; font-weight: 600; color: #00ff88;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+    }
+    .status-badge .dot {
+      width: 8px;
+      height: 8px;
+      background: #00ff88;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    .status-badge.offline .dot { background: #ff4444; animation: none; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .avatar-stack {
+      display: flex;
+      margin: 12px 0;
+    }
+    .av {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00ff88, #00d4ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      margin-right: -8px;
+      border: 2px solid #1a1a2e;
+    }
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+    }
+    .btn-join {
+      background: rgba(0,255,136,0.1);
+      border: 1px solid rgba(0,255,136,0.3);
+      padding: 6px 16px;
+      border-radius: 8px;
+      color: #00ff88;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-join:hover {
+      background: #00ff88;
+      color: #0a0a0a;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #00ff88, #00d4ff);
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      color: #0a0a0a;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px;
+      background: rgba(20,20,40,0.4);
+      border-radius: 20px;
+      grid-column: 1/-1;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-content" style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+
+    <!-- Topbar -->
+    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; margin-bottom: 32px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+      <a href="/dashboard" style="font-size: 1.5rem; font-weight: bold; text-decoration: none; background: linear-gradient(135deg, #00ff88, #00d4ff); -webkit-background-clip: text; background-clip: text; color: transparent;">EditAura</a>
+      
+      <div style="display: flex; gap: 20px; align-items: center;">
+        <div class="status-badge" id="conn-badge">
+          <div class="dot"></div>
+          <span id="conn-label">Connecting...</span>
+        </div>
+        <span class="live-count-badge">🌐 <span id="online-num">0</span> online</span>
+        <div class="user-menu">
+          <div id="user-avatar-btn" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #00ff88, #00d4ff); display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold;">?</div>
+          <div class="user-dropdown" id="user-dropdown">
+            <div class="dropdown-item" id="dd-name" style="font-weight:700; cursor:default">—</div>
+            <div style="height:1px; background:rgba(255,255,255,0.1); margin:6px 0"></div>
+            <div class="dropdown-item danger" id="logout-btn" style="cursor: pointer;">Sign out</div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main>
+      <div class="hero-greeting">
+        <h1 style="font-size: 2rem; margin-bottom: 8px;">Welcome, <span id="greet-name" style="color: #00ff88;">coder</span> ✦</h1>
+        <p>Your collaborative workspaces are ready.</p>
+      </div>
+
+      <!-- Stats row -->
+      <div style="display: flex; gap: 20px; margin: 32px 0;">
+        <div class="stat-pill" style="background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 20px;">📁 <span id="stat-workspaces">0</span> workspaces</div>
+        <div class="stat-pill" style="background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 20px;">👥 <span id="stat-online">0</span> online now</div>
+      </div>
+
+      <!-- Section header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin: 32px 0 24px;">
+        <h2 style="font-size: 1.5rem;">Your Workspaces</h2>
+        <div style="display: flex; gap: 10px;">
+          <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="Search workspaces..." />
+          </div>
+          <button class="btn-new" id="new-ws-btn">+ New Workspace</button>
+        </div>
+      </div>
+
+      <!-- Workspace grid -->
+      <div class="workspace-grid" id="workspace-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 24px;">
+        <div class="skeleton-card" style="background: rgba(255,255,255,0.03); border-radius: 20px; height: 200px;"></div>
+        <div class="skeleton-card" style="background: rgba(255,255,255,0.03); border-radius: 20px; height: 200px;"></div>
+        <div class="skeleton-card" style="background: rgba(255,255,255,0.03); border-radius: 20px; height: 200px;"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- New Workspace Modal -->
+  <div id="modal-new-ws" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); justify-content: center; align-items: center; z-index: 1000;">
+    <div style="background: rgba(20,20,40,0.95); border: 1px solid rgba(0,255,136,0.3); border-radius: 20px; padding: 32px; width: 90%; max-width: 450px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="color: #00ff88;">Create Workspace</h2>
+        <button onclick="closeModal()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">×</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+        <div>
+          <label style="display: block; margin-bottom: 8px; color: #aaa;">Workspace name</label>
+          <input type="text" id="ws-name-input" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;" placeholder="My awesome project" />
+        </div>
+        <div>
+          <label style="display: block; margin-bottom: 8px; color: #aaa;">Language</label>
+          <select id="ws-lang-input" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+            <option value="JavaScript">JavaScript</option>
+            <option value="TypeScript">TypeScript</option>
+            <option value="Python">Python</option>
+            <option value="Rust">Rust</option>
+            <option value="Go">Go</option>
+          </select>
+        </div>
+        <button class="btn-primary" id="create-ws-btn" style="padding: 14px; margin-top: 10px;">Create & Enter</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+  (() => {
+    // Get user from localStorage (using 'editaura_user' key from signup)
+    let userRaw = localStorage.getItem('editaura_user');
+    
+    // Fallback to 'ea_user' if exists
+    if (!userRaw) {
+      userRaw = localStorage.getItem('ea_user');
+    }
+    
+    if (!userRaw) {
+      window.location.href = '/';
+      return;
+    }
+    
+    let user;
+    try {
+      user = JSON.parse(userRaw);
+    } catch(e) {
+      window.location.href = '/';
+      return;
+    }
+    
+    console.log('✅ Dashboard loaded for user:', user);
+    
+    // Update UI with user info
+    document.getElementById('greet-name').textContent = user.username || user.name || 'coder';
+    document.getElementById('dd-name').textContent = user.username || user.name;
+    const avatarBtn = document.getElementById('user-avatar-btn');
+    avatarBtn.textContent = (user.username || user.name || '?')[0].toUpperCase();
+    
+    // Socket connection
+    let socket = io();
+    let totalOnline = 0;
+    
+    socket.on('connect', () => {
+      console.log('✅ Socket connected');
+      document.getElementById('conn-label').textContent = 'Connected';
+      document.getElementById('conn-badge').classList.remove('offline');
+      
+      // Register user
+      socket.emit('register-user', {
+        id: user.id,
+        username: user.username || user.name,
+        avatar: user.avatar || '🧑‍💻',
+        color: '#00ff88'
+      });
+    });
+    
+    socket.on('connect_error', () => {
+      document.getElementById('conn-label').textContent = 'Offline';
+      document.getElementById('conn-badge').classList.add('offline');
+    });
+    
+    socket.on('global_online', (data) => {
+      totalOnline = data.count;
+      document.getElementById('online-num').textContent = totalOnline;
+      document.getElementById('stat-online').textContent = totalOnline;
+    });
+    
+    // Fetch workspaces
+    let allWorkspaces = [];
+    
+    async function fetchWorkspaces() {
+      try {
+        const res = await fetch('/api/workspaces');
+        const data = await res.json();
+        allWorkspaces = data.workspaces || data || [];
+        document.getElementById('stat-workspaces').textContent = allWorkspaces.length;
+        renderWorkspaces(allWorkspaces);
+      } catch(err) {
+        console.error('Failed to fetch workspaces:', err);
+      }
+    }
+    
+    function renderWorkspaces(workspaces) {
+      const grid = document.getElementById('workspace-grid');
+      
+      if (!workspaces || workspaces.length === 0) {
+        grid.innerHTML = `<div class="empty-state">✨ No workspaces yet. Click "New Workspace" to start!</div>`;
+        return;
+      }
+      
+      grid.innerHTML = workspaces.map(ws => `
+        <div class="workspace-card" data-id="${ws.id}" onclick="joinWorkspace('${ws.id}')">
+          <div class="card-header" style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+            <h3 style="font-size: 1.2rem;">${escapeHtml(ws.name)}</h3>
+            <span class="lang-tag" style="background: rgba(0,255,136,0.1); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem;">${escapeHtml(ws.language || 'JavaScript')}</span>
+          </div>
+          <p style="color: #aaa; margin-bottom: 12px;">${escapeHtml(ws.description || 'No description')}</p>
+          <div class="card-meta" style="display: flex; gap: 12px; margin-bottom: 12px;">
+            <div class="live-badge" style="display: flex; align-items: center; gap: 4px;">
+              <div class="dot" style="width: 6px; height: 6px; background: ${ws.activeUsers > 0 ? '#00ff88' : '#666'}; border-radius: 50%;"></div>
+              <span style="font-size: 0.75rem;">${ws.activeUsers > 0 ? 'Live' : 'Idle'}</span>
+            </div>
+            <span style="font-size: 0.75rem; color: #666;">👥 ${ws.activeUsers || 0} active</span>
+          </div>
+          <div class="card-footer">
+            <button class="btn-join" onclick="event.stopPropagation(); joinWorkspace('${ws.id}')">Join Workspace →</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    window.joinWorkspace = function(id) {
+      console.log('Joining workspace:', id);
+      window.location.href = `/room/${id}`;
+    };
+    
+    // Modal handling
+    window.openModal = function() {
+      document.getElementById('modal-new-ws').style.display = 'flex';
+    };
+    
+    window.closeModal = function() {
+      document.getElementById('modal-new-ws').style.display = 'none';
+      document.getElementById('ws-name-input').value = '';
+    };
+    
+    document.getElementById('new-ws-btn').onclick = () => openModal();
+    
+    document.getElementById('create-ws-btn').onclick = async () => {
+      const name = document.getElementById('ws-name-input').value.trim();
+      const language = document.getElementById('ws-lang-input').value;
+      
+      if (!name) {
+        alert('Please enter a workspace name');
+        return;
+      }
+      
+      const btn = document.getElementById('create-ws-btn');
+      btn.textContent = 'Creating...';
+      btn.disabled = true;
+      
+      try {
+        const res = await fetch('/api/workspaces', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name,
+            language: language,
+            description: '',
+            createdBy: user.username || user.name,
+            creatorId: user.id
+          })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          const workspace = data.workspace || data;
+          closeModal();
+          fetchWorkspaces();
+          setTimeout(() => {
+            window.location.href = `/room/${workspace.id}`;
+          }, 500);
+        } else {
+          alert('Failed to create workspace');
+        }
+      } catch(err) {
+        console.error(err);
+        alert('Error creating workspace');
+      } finally {
+        btn.textContent = 'Create & Enter';
+        btn.disabled = false;
+      }
+    };
+    
+    // Search
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const filtered = allWorkspaces.filter(ws => ws.name.toLowerCase().includes(query));
+      renderWorkspaces(filtered);
+    });
+    
+    // Dropdown
+    document.getElementById('user-avatar-btn').addEventListener('click', () => {
+      document.getElementById('user-dropdown').classList.toggle('open');
+    });
+    
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.user-menu')) {
+        document.getElementById('user-dropdown').classList.remove('open');
+      }
+    });
+    
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      localStorage.removeItem('editaura_user');
+      localStorage.removeItem('ea_user');
+      window.location.href = '/';
+    });
+    
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+      });
+    }
+    
+    // Load workspaces on page load
+    fetchWorkspaces();
+  })();
+  </script>
+</body>
+</html>

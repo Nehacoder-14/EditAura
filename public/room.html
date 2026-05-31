@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EditAura - Code Workspace with Chat</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e2e;
+            color: #e2e2f4;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: #2a2a3a;
+            border-bottom: 1px solid #3a3a4a;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .workspace-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .workspace-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .lang-badge {
+            padding: 4px 12px;
+            background: #3a3a4a;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .lang-badge.javascript { background: #f7df1e; color: #000; }
+        .lang-badge.python { background: #3776ab; color: #fff; }
+        .lang-badge.css { background: #264de4; color: #fff; }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #2a2a3a;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: #252535;
+            border-right: 1px solid #3a3a4a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid #3a3a4a;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .tab-content {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* Users List */
+        .users-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: #2a2a3a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .user-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+        }
+
+        /* Chat Area */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            animation: fadeInUp 0.3s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.own {
+            text-align: right;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            font-size: 11px;
+        }
+
+        .message.own .message-header {
+            justify-content: flex-end;
+        }
+
+        .message-author {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .message-time {
+            color: #666;
+            font-size: 10px;
+        }
+
+        .message-text {
+            background: #2a2a3a;
+            padding: 8px 12px;
+            border-radius: 12px;
+            display: inline-block;
+            max-width: 80%;
+            font-size: 13px;
+            word-wrap: break-word;
+        }
+
+        .message.own .message-text {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .system-message {
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            padding: 8px;
+            font-style: italic;
+        }
+
+        .chat-input-area {
+            padding: 16px;
+            border-top: 1px solid #3a3a4a;
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 12px;
+            background: #2a2a3a;
+            border: 1px solid #3a3a4a;
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.02);
+        }
+
+        /* Editor Area */
+        .editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e2e;
+        }
+
+        .editor-toolbar {
+            background: #252535;
+            padding: 8px 16px;
+            border-bottom: 1px solid #3a3a4a;
+            display: flex;
+            gap: 12px;
+        }
+
+        .toolbar-btn {
+            padding: 6px 16px;
+            background: #3a3a4a;
+            border: none;
+            border-radius: 6px;
+            color: #e2e2f4;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .toolbar-btn:hover {
+            background: #4a4a5a;
+        }
+
+        .toolbar-btn.primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .toolbar-btn.primary:hover {
+            transform: scale(1.02);
+        }
+
+        .editor-wrapper {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .line-numbers {
+            padding: 16px 12px;
+            background: #1a1a2a;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #666;
+            text-align: right;
+            user-select: none;
+            border-right: 1px solid #3a3a4a;
+            overflow-y: hidden;
+        }
+
+        textarea {
+            flex: 1;
+            padding: 16px;
+            background: #1e1e2e;
+            border: none;
+            color: #e2e2f4;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            white-space: pre-wrap;
+        }
+
+        /* Output Area */
+        .output-area {
+            height: 200px;
+            background: #1a1a2a;
+            border-top: 1px solid #3a3a4a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .output-header {
+            background: #252535;
+            padding: 8px 16px;
+            border-bottom: 1px solid #3a3a4a;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .output-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        /* Notification Badge */
+        .notification-badge {
+            position: relative;
+        }
+
+        .badge-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #f87171;
+            color: white;
+            font-size: 10px;
+            padding: 2px 5px;
+            border-radius: 10px;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a2a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #3a3a4a;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">EditAura Code Editor</div>
+        <div class="workspace-info">
+            <span class="workspace-name" id="workspace-name">Loading...</span>
+            <span class="lang-badge" id="lang-badge">JavaScript</span>
+        </div>
+        <div class="user-info">
+            <div class="status">
+                <div class="status-dot"></div>
+                <span id="status-text">Connected</span>
+            </div>
+            <div class="user-avatar" id="user-avatar">U</div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sidebar-tabs">
+                <button class="tab-btn active" data-tab="users">
+                    👥 Users
+                </button>
+                <button class="tab-btn" data-tab="chat" id="chat-tab-btn">
+                    💬 Chat
+                    <span id="chat-badge" class="badge-count" style="display: none;">0</span>
+                </button>
+            </div>
+
+            <!-- Users Tab -->
+            <div class="tab-content active" id="users-tab">
+                <div class="users-list" id="users-list">
+                    <div class="user-item">
+                        <div class="user-dot"></div>
+                        <span>You</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Tab -->
+            <div class="tab-content" id="chat-tab">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="system-message">✨ Welcome to the chat! Say hello to your team.</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" class="chat-input" id="chat-input" placeholder="Type a message...">
+                    <button class="send-btn" id="send-btn">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-area">
+            <div class="editor-toolbar">
+                <button class="toolbar-btn" id="format-btn">✨ Format</button>
+                <button class="toolbar-btn primary" id="run-btn">▶️ Run Code</button>
+                <button class="toolbar-btn" id="clear-btn">🗑️ Clear Output</button>
+            </div>
+
+            <div class="editor-wrapper">
+                <div class="line-numbers" id="line-numbers">1</div>
+                <textarea id="code-editor" spellcheck="false"></textarea>
+            </div>
+
+            <div class="output-area">
+                <div class="output-header">📋 Output</div>
+                <div class="output-content" id="output-content">Ready to run code...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get user
+        let user = localStorage.getItem('editaura_user');
+        if (!user) {
+            user = localStorage.getItem('ea_user');
+        }
+        if (!user) {
+            const name = prompt('Enter your username:');
+            if (!name) {
+                window.location.href = '/';
+            }
+            user = { id: 'user_' + Date.now(), username: name };
+            localStorage.setItem('editaura_user', JSON.stringify(user));
+        } else {
+            user = JSON.parse(user);
+        }
+        
+        document.getElementById('user-avatar').textContent = (user.username || user.name || 'U')[0].toUpperCase();
+        
+        // Get workspace ID from URL
+        const workspaceId = window.location.pathname.split('/').pop();
+        if (!workspaceId || workspaceId === 'room.html') {
+            window.location.href = '/dashboard';
+        }
+        
+        // DOM elements
+        const editor = document.getElementById('code-editor');
+        const lineNumbers = document.getElementById('line-numbers');
+        const outputContent = document.getElementById('output-content');
+        const runBtn = document.getElementById('run-btn');
+        const formatBtn = document.getElementById('format-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const chatMessages = document.getElementById('chat-messages');
+        
+        let currentLanguage = 'JavaScript';
+        let socket = io();
+        let unreadCount = 0;
+        
+        // Update line numbers
+        function updateLineNumbers() {
+            const lines = editor.value.split('\n').length;
+            lineNumbers.textContent = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
+        }
+        
+        editor.addEventListener('input', updateLineNumbers);
+        editor.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+                editor.value = editor.value.substring(0, start) + '    ' + editor.value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + 4;
+                updateLineNumbers();
+            }
+        });
+        
+        // Format code
+        formatBtn.addEventListener('click', () => {
+            try {
+                let code = editor.value;
+                code = code.replace(/;\s*\n/g, ';\n');
+                code = code.replace(/\{\s*\n/g, '{\n');
+                code = code.replace(/\}\s*else/g, '} else');
+                editor.value = code;
+                updateLineNumbers();
+                addSystemMessage('✓ Code formatted successfully!');
+            } catch(e) {
+                addSystemMessage(`❌ Error formatting: ${e.message}`);
+            }
+        });
+        
+        // Clear output
+        clearBtn.addEventListener('click', () => {
+            outputContent.innerHTML = 'Output cleared...';
+        });
+        
+        // Add message to chat
+        function addMessage(username, message, isOwn = false) {
+            const messageDiv = document.createElement('div');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            messageDiv.className = `message ${isOwn ? 'own' : ''}`;
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span class="message-author">${escapeHtml(username)}</span>
+                    <span class="message-time">${time}</span>
+                </div>
+                <div class="message-text">${escapeHtml(message)}</div>
+            `;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Increment unread count if chat tab is not active
+            const chatTab = document.getElementById('chat-tab');
+            if (!chatTab.classList.contains('active')) {
+                unreadCount++;
+                const badge = document.getElementById('chat-badge');
+                badge.textContent = unreadCount;
+                badge.style.display = 'inline-block';
+            }
+        }
+        
+        function addSystemMessage(message) {
+            const systemDiv = document.createElement('div');
+            systemDiv.className = 'system-message';
+            systemDiv.textContent = message;
+            chatMessages.appendChild(systemDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Send chat message
+        function sendChatMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            socket.emit('chat_message', {
+                roomId: workspaceId,
+                message: message,
+                username: user.username || user.name
+            });
+            
+            addMessage(user.username || user.name, message, true);
+            chatInput.value = '';
+        }
+        
+        sendBtn.addEventListener('click', sendChatMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendChatMessage();
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+                
+                // Reset unread count when switching to chat tab
+                if (tabName === 'chat') {
+                    unreadCount = 0;
+                    const badge = document.getElementById('chat-badge');
+                    badge.style.display = 'none';
+                }
+            });
+        });
+        
+        // Run code
+        runBtn.addEventListener('click', async () => {
+            const code = editor.value;
+            const language = currentLanguage;
+            
+            outputContent.innerHTML = '<span style="color: #fbbf24;">⏳ Running code...</span>';
+            
+            try {
+                const response = await fetch('/api/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ language, code })
+                });
+                
+                const data = await response.json();
+                outputContent.innerHTML = `<span style="color: #4ade80;">📤 Output:</span>\n${data.output || 'No output'}`;
+            } catch(err) {
+                outputContent.innerHTML = `<span style="color: #f87171;">❌ Error: ${err.message}</span>`;
+            }
+        });
+        
+        // Socket events
+        socket.on('connect', () => {
+            document.getElementById('status-text').textContent = 'Connected';
+            addSystemMessage('✅ Connected to server');
+            socket.emit('register-user', {
+                id: user.id,
+                username: user.username || user.name
+            });
+            
+            setTimeout(() => {
+                socket.emit('join_room', { roomId: workspaceId });
+            }, 500);
+        });
+        
+        socket.on('disconnect', () => {
+            document.getElementById('status-text').textContent = 'Disconnected';
+            addSystemMessage('⚠️ Disconnected from server');
+        });
+        
+        socket.on('code_update', (data) => {
+            if (data.code !== editor.value) {
+                editor.value = data.code;
+                updateLineNumbers();
+            }
+        });
+        
+        socket.on('room_users', (data) => {
+            const usersList = document.getElementById('users-list');
+            const currentUser = user.username || user.name;
+            const allUsers = [{ username: currentUser, isYou: true }, ...data.users];
+            
+            usersList.innerHTML = allUsers.map(u => `
+                <div class="user-item">
+                    <div class="user-dot"></div>
+                    <span>${escapeHtml(u.username)} ${u.isYou ? '(you)' : ''}</span>
+                </div>
+            `).join('');
+        });
+        
+        socket.on('chat_message', (data) => {
+            if (data.username !== (user.username || user.name)) {
+                addMessage(data.username, data.message, false);
+            }
+        });
+        
+        socket.on('user_joined', (data) => {
+            addSystemMessage(`👋 ${escapeHtml(data.username)} joined the workspace`);
+        });
+        
+        socket.on('user_left', (data) => {
+            addSystemMessage(`👋 ${escapeHtml(data.username)} left the workspace`);
+        });
+        
+        // Send code changes
+        let typingTimeout;
+        editor.addEventListener('input', () => {
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                socket.emit('code_change', {
+                    roomId: workspaceId,
+                    code: editor.value
+                });
+            }, 300);
+        });
+        
+        // Fetch workspace info
+        fetch(`/api/workspaces/${workspaceId}`)
+            .then(res => res.json())
+            .then(data => {
+                const ws = data.workspace;
+                document.getElementById('workspace-name').textContent = ws.name;
+                currentLanguage = ws.language;
+                
+                const langBadge = document.getElementById('lang-badge');
+                langBadge.textContent = ws.language;
+                langBadge.className = `lang-badge ${ws.language.toLowerCase()}`;
+                
+                if (ws.code) {
+                    editor.value = ws.code;
+                    updateLineNumbers();
+                }
+            })
+            .catch(err => console.error('Error fetching workspace:', err));
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // Initial line numbers
+        updateLineNumbers();
+    </script>
+</body>
+</html>
