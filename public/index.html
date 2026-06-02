@@ -1,142 +1,520 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EditAura — Real-time Code Collaboration</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>EditAura · Collaborative Code Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
-    .signup-page { position: relative; }
-    /* Extra highlight ring behind card */
-    .card-glow-ring {
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #e2e2f4;
+      line-height: 1.5;
+    }
+
+    /* animated background orbs + grid */
+    .bg-aura {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .orb {
       position: absolute;
-      width: 520px; height: 520px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(0,255,136,0.07) 0%, transparent 65%);
-      top: 50%; left: 50%;
-      transform: translate(-50%,-50%);
+      filter: blur(100px);
+      opacity: 0.3;
+      animation: float 18s infinite ease-in-out;
+    }
+    .orb-1 {
+      width: 400px;
+      height: 400px;
+      background: #00ff88;
+      top: -150px;
+      left: -150px;
+    }
+    .orb-2 {
+      width: 500px;
+      height: 500px;
+      background: #0066FF;
+      bottom: -200px;
+      right: -150px;
+      animation-delay: -5s;
+    }
+    .orb-3 {
+      width: 350px;
+      height: 350px;
+      background: #7c3aed;
+      top: 40%;
+      left: 60%;
+      animation-delay: -10s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -30px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.9); }
+    }
+
+    .grid-pattern {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
       pointer-events: none;
-      animation: ringPulse 4s ease-in-out infinite;
+      z-index: 0;
     }
-    @keyframes ringPulse {
-      0%,100% { opacity:0.6; transform:translate(-50%,-50%) scale(1); }
-      50%      { opacity:1;   transform:translate(-50%,-50%) scale(1.08); }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 2;
     }
-    .feature-pills {
-      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+
+    /* navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 0 32px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+    .logo-icon {
+      background: linear-gradient(135deg, #00ff88, #00d4ff);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0a0a0f;
+      font-size: 1.3rem;
+      box-shadow: 0 0 12px rgba(0,255,136,0.4);
+    }
+    .logo-text {
+      background: linear-gradient(135deg, #00ff88, #00d4ff);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: #a0aec0;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover {
+      color: #00ff88;
+    }
+    .btn-outline {
+      border: 1.5px solid #00ff88;
+      background: transparent;
+      padding: 8px 20px;
+      border-radius: 40px;
+      font-weight: 600;
+      color: #00ff88;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .btn-outline:hover {
+      background: rgba(0,255,136,0.1);
+      box-shadow: 0 0 12px rgba(0,255,136,0.2);
+    }
+
+    /* hero */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 64px 0 48px;
+    }
+    .badge {
+      background: rgba(0,255,136,0.1);
+      backdrop-filter: blur(4px);
+      color: #00ff88;
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 24px;
+      border: 1px solid rgba(0,255,136,0.2);
+    }
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff, #00ff88);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      max-width: 800px;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .hero p {
+      font-size: 1.2rem;
+      color: #9ca3af;
+      max-width: 580px;
       margin-top: 20px;
     }
-    .feature-pill {
-      padding: 4px 12px;
-      border-radius: 99px;
-      font-size: 0.72rem; font-weight: 600; color: var(--text-3);
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.02);
+    .cta-group {
+      margin-top: 32px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
-    .or-divider { display: flex; align-items: center; gap: 12px; color: var(--text-3); font-size: 0.8rem; margin: 6px 0; }
-    .or-divider::before, .or-divider::after { content:''; flex:1; height:1px; background: var(--border); }
+    .btn-primary {
+      background: linear-gradient(135deg, #00ff88, #00d4ff);
+      border: none;
+      padding: 14px 32px;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 1rem;
+      color: #0a0a0f;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 20px rgba(0,255,136,0.25);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0,255,136,0.4);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(4px);
+      border: 1px solid #2d3748;
+      padding: 14px 32px;
+      border-radius: 60px;
+      font-weight: 600;
+      color: #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      border-color: #00ff88;
+      background: rgba(0,255,136,0.05);
+      color: #00ff88;
+    }
+
+    /* feature grid */
+    .features {
+      padding: 64px 0 80px;
+    }
+    .section-title {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 48px;
+      color: #f0f2f8;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 32px;
+    }
+    .feature-card {
+      background: rgba(20, 24, 36, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0,255,136,0.12);
+      border-radius: 28px;
+      padding: 28px 24px;
+      transition: all 0.25s;
+    }
+    .feature-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(0,255,136,0.4);
+      box-shadow: 0 20px 35px -12px rgba(0,255,136,0.15);
+    }
+    .feature-icon {
+      font-size: 2.2rem;
+      margin-bottom: 20px;
+      color: #00ff88;
+    }
+    .feature-card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: white;
+    }
+    .feature-card p {
+      color: #9ca3af;
+      line-height: 1.5;
+    }
+
+    /* modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(20px);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-card {
+      background: rgba(15, 18, 28, 0.98);
+      border: 1px solid rgba(0,255,136,0.2);
+      border-radius: 32px;
+      max-width: 420px;
+      width: 90%;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 40px 60px rgba(0,0,0,0.5);
+    }
+    .modal-card h2 {
+      margin-bottom: 8px;
+      font-size: 1.8rem;
+      color: #00ff88;
+    }
+    .modal-card p {
+      color: #9ca3af;
+      margin-bottom: 24px;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+      margin-bottom: 24px;
+    }
+    .input-group label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+    .input-group input {
+      padding: 14px 16px;
+      border-radius: 40px;
+      border: 1.5px solid #2d3748;
+      background: #0f121c;
+      font-size: 1rem;
+      color: white;
+      transition: 0.2s;
+    }
+    .input-group input:focus {
+      outline: none;
+      border-color: #00ff88;
+      box-shadow: 0 0 0 3px rgba(0,255,136,0.1);
+    }
+    .error-msg {
+      color: #f87171;
+      font-size: 0.8rem;
+      margin-top: -12px;
+      margin-bottom: 12px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .modal-actions button {
+      flex: 1;
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px 0 32px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    @media (max-width: 700px) {
+      .hero h1 { font-size: 2.2rem; }
+      .container { padding: 0 20px; }
+      .navbar { flex-direction: column; }
+    }
   </style>
 </head>
 <body>
-  <!-- Background -->
-  <div class="bg-scene">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+<div class="bg-aura">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+<div class="grid-pattern"></div>
+
+<div class="container">
+  <nav class="navbar">
+    <div class="logo">
+      <div class="logo-icon">&gt;_</div>
+      <span class="logo-text">EditAura</span>
+    </div>
+    <div class="nav-links">
+      <a href="#">Features</a>
+      <a href="#">Pricing</a>
+      <button class="btn-outline" id="loginBtn">Log in</button>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="badge">
+      <i class="fas fa-code"></i> Live · Real‑time · Collaborative
+    </div>
+    <h1>Code together,<br>instantly.</h1>
+    <p>EditAura is the collaborative editor where teams write JavaScript, Python, or CSS in real time — with chat, presence, and instant execution.</p>
+    <div class="cta-group">
+      <button class="btn-primary" id="getStartedBtn">
+        <i class="fas fa-arrow-right"></i> Get started free
+      </button>
+      <button class="btn-secondary" id="demoBtn">Watch demo →</button>
+    </div>
   </div>
-  <div class="bg-noise"></div>
-  <canvas id="particles-canvas"></canvas>
 
-  <!-- Toast container -->
-  <div id="toast-container"></div>
-
-  <!-- Page -->
-  <div class="page-content signup-page">
-    <div class="card-glow-ring"></div>
-
-    <div class="signup-card">
-      <div class="signup-logo">
-        <div class="logo-mark">EA</div>
-        <h1 style="font-size:1.6rem;" class="gradient-text glow-text">EditAura</h1>
-        <p class="signup-tagline mt-1">
-          <span class="typewriter" id="tagline"></span>
-        </p>
+  <div class="features">
+    <div class="section-title">Built for seamless teamwork</div>
+    <div class="grid">
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-comments"></i></div>
+        <h3>Live chat & presence</h3>
+        <p>See who’s online, chat while coding, and never lose context.</p>
       </div>
-
-      <form class="signup-form" id="signup-form">
-        <div class="input-group">
-          <label>Your name</label>
-          <input type="text" id="input-name" placeholder="Ada Lovelace" autocomplete="off" required />
-        </div>
-
-        <div class="or-divider">or join an existing workspace</div>
-
-        <div class="input-group">
-          <label>Workspace ID <span style="color:var(--text-3);font-weight:400">(optional)</span></label>
-          <input type="text" id="input-workspace" placeholder="abc123" autocomplete="off" />
-        </div>
-
-        <button type="submit" class="btn btn-primary w-full" style="margin-top:4px;padding:14px;">
-          <span id="btn-text">Launch into the Aura</span>
-          <span id="btn-spinner" style="display:none">⟳</span>
-        </button>
-      </form>
-
-      <div class="feature-pills">
-        <span class="feature-pill">⚡ Real-time sync</span>
-        <span class="feature-pill">👥 Multiplayer cursors</span>
-        <span class="feature-pill">💬 Built-in chat</span>
-        <span class="feature-pill">🔒 Private workspaces</span>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-play-circle"></i></div>
+        <h3>Run code instantly</h3>
+        <p>Execute JavaScript and Python directly inside the editor – no setup.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-sync-alt"></i></div>
+        <h3>Real‑time sync</h3>
+        <p>Every keystroke is shared live with your team, like Google Docs for code.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-palette"></i></div>
+        <h3>CSS playground</h3>
+        <p>Design together with instant visual feedback.</p>
       </div>
     </div>
   </div>
 
-  <script src="js/particles.js"></script>
-  <script src="js/ui.js"></script>
-  <script>
-    // Typewriter tagline
-    document.addEventListener('DOMContentLoaded', () => {
-      typewriter(document.getElementById('tagline'), [
-        'Code together, ship faster.',
-        'Real-time collaboration.',
-        'Your team, one editor.',
-        'No setup. Just code.',
-      ], 55, 2000);
+  <footer>
+    <p>✨ Join hundreds of developers — no credit card required. Just pick a name and start.</p>
+    <p style="margin-top: 12px;">© 2025 EditAura · Collaborative coding, reimagined.</p>
+  </footer>
+</div>
+
+<!-- Modal for username sign-up / login -->
+<div id="authModal" class="modal">
+  <div class="modal-card">
+    <h2>Join EditAura</h2>
+    <p>Enter any username — no password needed.</p>
+    <div class="input-group">
+      <label>Your username</label>
+      <input type="text" id="usernameInput" placeholder="e.g., marie_codes" autocomplete="off">
+      <div id="modalError" class="error-msg" style="display: none;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cancelModalBtn">Cancel</button>
+      <button class="btn-primary" id="confirmAuthBtn">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const modal = document.getElementById('authModal');
+    const usernameInput = document.getElementById('usernameInput');
+    const modalError = document.getElementById('modalError');
+    const confirmBtn = document.getElementById('confirmAuthBtn');
+    const cancelBtn = document.getElementById('cancelModalBtn');
+    const getStartedBtn = document.getElementById('getStartedBtn');
+    const loginBtn = document.getElementById('loginBtn');
+    const demoBtn = document.getElementById('demoBtn');
+
+    function saveUserAndRedirect(username) {
+      if (!username || username.trim().length < 2) {
+        modalError.textContent = 'Username must be at least 2 characters.';
+        modalError.style.display = 'block';
+        return false;
+      }
+      const userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      const user = {
+        id: userId,
+        username: username.trim(),
+        avatar: '👤',
+        color: '#00ff88'
+      };
+      localStorage.setItem('editaura_user', JSON.stringify(user));
+      window.location.href = '/dashboard';
+      return true;
+    }
+
+    function openModal() {
+      modal.classList.add('active');
+      usernameInput.value = '';
+      modalError.style.display = 'none';
+      usernameInput.focus();
+    }
+
+    function closeModal() {
+      modal.classList.remove('active');
+    }
+
+    getStartedBtn.addEventListener('click', openModal);
+    loginBtn.addEventListener('click', openModal);
+    cancelBtn.addEventListener('click', closeModal);
+    confirmBtn.addEventListener('click', () => {
+      saveUserAndRedirect(usernameInput.value);
     });
-
-    // Handle form
-    const form = document.getElementById('signup-form');
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      const name = document.getElementById('input-name').value.trim();
-      const wsId  = document.getElementById('input-workspace').value.trim();
-
-      if(!name){ showToast('Please enter your name.', 'error'); return; }
-
-      const btn  = form.querySelector('.btn');
-      const bTxt = document.getElementById('btn-text');
-      const bSpin= document.getElementById('btn-spinner');
-      btn.disabled = true;
-      bTxt.textContent = 'Connecting…';
-      bSpin.style.display = 'inline-block';
-
-      // Persist user
-      const userId = 'u_' + Math.random().toString(36).slice(2,9);
-      localStorage.setItem('ea_user', JSON.stringify({ id: userId, name }));
-
-      if(wsId){
-        // Joining an existing workspace
-        setTimeout(() => {
-          window.location.href = `room.html?workspace=${encodeURIComponent(wsId)}`;
-        }, 600);
-      } else {
-        // Go to dashboard to pick/create workspace
-        setTimeout(() => {
-          window.location.href = 'dashboard.html';
-        }, 600);
+    usernameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        saveUserAndRedirect(usernameInput.value);
       }
     });
-  </script>
+
+    demoBtn.addEventListener('click', () => {
+      alert('🎥 Live demo: Open two browser windows and join the same workspace!\n\nReal-time editing, chat, and code execution.');
+    });
+  })();
+</script>
 </body>
 </html>
 
